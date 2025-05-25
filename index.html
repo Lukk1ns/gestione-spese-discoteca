@@ -1,16 +1,548 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width">
-    <title>Gestione Spese Discoteca</title>
-    <style>
-        /* Inserisci qui tutto il CSS del tuo file (omesso per brevità) */
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Gestione Spese Discoteca</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #0c0c0c 0%, #1a1a2e 25%, #16213e 50%, #0f3460 100%);
+      min-height: 100vh;
+      color: #e1e5e9;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    .header {
+      background: rgba(15, 23, 42, 0.95);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 24px;
+      padding: 40px;
+      margin-bottom: 30px;
+      box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+      text-align: center;
+    }
+
+    .header h1 {
+      font-size: 3rem;
+      background: linear-gradient(45deg, #ff6b6b, #ee5a24, #ffa726, #42a5f5);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 15px;
+      text-shadow: 0 0 30px rgba(255, 107, 107, 0.3);
+    }
+
+    .controls {
+      display: flex;
+      gap: 15px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-top: 20px;
+    }
+
+    .btn {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-primary {
+      background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+      color: white;
+      box-shadow: 0 10px 25px rgba(255, 107, 107, 0.4);
+      border: 1px solid rgba(255, 107, 107, 0.3);
+    }
+    .btn-primary:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 15px 35px rgba(255, 107, 107, 0.6);
+      background: linear-gradient(45deg, #ff5252, #d84315);
+    }
+
+    .btn-secondary {
+      background: rgba(30, 41, 59, 0.9);
+      color: #e2e8f0;
+      border: 2px solid #475569;
+    }
+    .btn-secondary:hover {
+      background: rgba(51, 65, 85, 0.9);
+      border-color: #64748b;
+      color: #f1f5f9;
+      transform: translateY(-2px);
+    }
+
+    .week-tabs {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 30px;
+      overflow-x: auto;
+      padding: 10px 0;
+    }
+
+    .week-tab {
+      padding: 15px 25px;
+      background: rgba(30, 41, 59, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 15px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.3s ease;
+      font-weight: 500;
+      color: #e2e8f0;
+    }
+    .week-tab.active {
+      background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+      color: white;
+      transform: translateY(-3px);
+      box-shadow: 0 10px 25px rgba(255, 107, 107, 0.4);
+      border-color: rgba(255, 107, 107, 0.3);
+    }
+
+    .week-content {
+      background: rgba(15, 23, 42, 0.95);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 24px;
+      padding: 35px;
+      box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+      margin-bottom: 30px;
+    }
+
+    .week-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 35px;
+      flex-wrap: wrap;
+      gap: 15px;
+    }
+    .week-title {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #ff6b6b;
+      text-shadow: 0 0 20px rgba(255, 107, 107, 0.3);
+    }
+    .week-total {
+      font-size: 1.6rem;
+      font-weight: 700;
+      padding: 15px 25px;
+      background: linear-gradient(45deg, #ffa726, #ff9800);
+      color: white;
+      border-radius: 15px;
+      box-shadow: 0 10px 25px rgba(255, 167, 38, 0.4);
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    .expenses-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+
+    .expense-item {
+      background: rgba(30, 41, 59, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 18px;
+      padding: 25px;
+      transition: all 0.3s ease;
+    }
+    .expense-item:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+      border-color: #ff6b6b;
+    }
+    .expense-label {
+      font-weight: 600;
+      color: #94a3b8;
+      margin-bottom: 10px;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .expense-input {
+      width: 100%;
+      padding: 15px;
+      border: 2px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      font-size: 16px;
+      transition: all 0.3s ease;
+      background: rgba(15, 23, 42, 0.8);
+      color: #e1e5e9;
+    }
+    .expense-input:focus {
+      outline: none;
+      border-color: #ff6b6b;
+      box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.2);
+      background: rgba(15, 23, 42, 0.95);
+    }
+
+    .statistics {
+      background: rgba(15, 23, 42, 0.95);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 24px;
+      padding: 35px;
+      box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+      margin-bottom: 30px;
+    }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+    .stat-card {
+      background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+      border-radius: 18px;
+      padding: 30px;
+      text-align: center;
+      color: white;
+      box-shadow: 0 15px 35px rgba(255, 107, 107, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .stat-card:nth-child(2) {
+      background: linear-gradient(135deg, #ffa726 0%, #ff9800 100%);
+      box-shadow: 0 15px 35px rgba(255, 167, 38, 0.4);
+    }
+    .stat-card:nth-child(3) {
+      background: linear-gradient(135deg, #42a5f5 0%, #1e88e5 100%);
+      box-shadow: 0 15px 35px rgba(66, 165, 245, 0.4);
+    }
+    .stat-value {
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .stat-label {
+      font-size: 14px;
+      opacity: 0.9; text-transform: uppercase; letter-spacing: 0.5px;
+    }
+
+    .chart-container {
+      background: rgba(30, 41, 59, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 18px;
+      padding: 30px;
+      margin-top: 25px;
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+    }
+  </style>
 </head>
 <body>
-    <!-- Incolla qui il tuo HTML completo (omesso per brevità) -->
-    <h1>Anteprima: Gestione Spese Discoteca</h1>
-    <p>Questa è una pagina statica di prova.</p>
+  <div class="container">
+    <div class="header">
+      <h1>😈💰 SPESE PAPI</h1>
+      <p style="color: #94a3b8; font-size: 1.1rem;">Gestisci le spese della discoteca con stile diabolico</p>
+      <div class="controls">
+        <button class="btn btn-primary" onclick="showNewWeekModal()">➕ Nuova Settimana</button>
+        <button class="btn btn-primary" onclick="saveWeek()">💾 Salva Settimana</button>
+        <button class="btn btn-secondary" onclick="exportCurrentWeek()">📊 Esporta Settimana</button>
+        <button class="btn btn-secondary" onclick="exportAllData()">📈 Esporta Tutto</button>
+        <button class="btn btn-secondary" onclick="toggleStatistics()">📊 Statistiche</button>
+      </div>
+    </div>
+
+    <div class="week-tabs" id="weekTabs"></div>
+
+    <div id="savedWeeksSection" class="week-content" style="margin-bottom: 20px;">
+      <h3 style="color: #667eea; margin-bottom: 20px;">📚 Settimane Salvate</h3>
+      <div id="savedWeeksList"></div>
+    </div>
+
+    <div id="weekContent"></div>
+
+    <div id="statisticsSection" class="statistics hidden">
+      <h2 style="margin-bottom: 30px; color: #ff6b6b; font-size: 2rem; text-shadow: 0 0 20px rgba(255, 107, 107, 0.3);">📊 Statistiche Generali</h2>
+      <div class="stats-grid">
+        <div class="stat-card"><div class="stat-value" id="totalWeeks">0</div><div class="stat-label">Settimane</div></div>
+        <div class="stat-card"><div class="stat-value" id="totalExpenses">€0</div><div class="stat-label">Spese Totali</div></div>
+        <div class="stat-card"><div class="stat-value" id="avgWeekly">€0</div><div class="stat-label">Media Settimanale</div></div>
+      </div>
+      <div class="chart-container">
+        <h3 style="margin-bottom: 20px; color: #ff6b6b;">📈 Andamento Spese per Categoria</h3>
+        <div id="categoryChart"></div>
+      </div>
+      <div class="chart-container" id="weekComparisonChart" style="margin-top: 20px;">
+        <h3 style="margin-bottom: 20px; color: #ff6b6b;">📊 Confronto Settimanale</h3>
+        <div id="weekChart"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal per nuova settimana -->
+  <div id="newWeekModal" class="modal">
+    <div class="modal-content">
+      <h3 style="margin-bottom: 20px; color: #ff6b6b;">📅 Aggiungi Nuova Settimana</h3>
+      <input type="date" id="weekDate" class="date-input">
+      <div style="display: flex; gap: 15px; margin-top: 20px;">
+        <button class="btn btn-primary" onclick="createNewWeek()">Crea Settimana</button>
+        <button class="btn btn-secondary" onclick="closeModal()">Annulla</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const EXPENSE_CATEGORIES = [
+      'PERSONALE','PERSONALE CASH','SICUREZZA','SICUREZZA CASH',
+      'AFFITTO','CORRENTE','SIAE','CRISTIAN','LUKA','TASSE',
+      'FORNITORE','TONI','CARTA','TOSANO','CINESI','BHREMA',
+      'FRUTTA','SPESE VARIE','SPESE EXTRA','SPESE EXTRA2','SPESE EXTRA3'
+    ];
+    let weeks = {}, currentWeek = null, savedWeeks = {};
+
+    // Persistenza
+    function saveData() {
+      localStorage.setItem('weeks', JSON.stringify(weeks));
+      localStorage.setItem('savedWeeks', JSON.stringify(savedWeeks));
+    }
+    function loadSavedData() {
+      const w = localStorage.getItem('weeks'),
+            s = localStorage.getItem('savedWeeks');
+      weeks = w ? JSON.parse(w) : {};
+      savedWeeks = s ? JSON.parse(s) : {};
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      loadSavedData();
+      renderWeekTabs();
+      renderSavedWeeks();
+      if (Object.keys(weeks).length === 0 && Object.keys(savedWeeks).length === 0) {
+        showNewWeekModal();
+      } else if (Object.keys(weeks).length > 0) {
+        showWeek(Object.keys(weeks)[0]);
+      }
+    });
+
+    function showNewWeekModal() {
+      document.getElementById('newWeekModal').style.display = 'flex';
+      document.getElementById('weekDate').value = getNextMondayDate();
+    }
+    function closeModal() {
+      document.getElementById('newWeekModal').style.display = 'none';
+    }
+    function createNewWeek() {
+      const date = document.getElementById('weekDate').value;
+      if (!date) { alert('Seleziona una data!'); return; }
+      weeks[date] = { date, expenses: {} };
+      EXPENSE_CATEGORIES.forEach(c => weeks[date].expenses[c]=0);
+      saveData(); closeModal(); renderWeekTabs(); showWeek(date);
+    }
+    function saveWeek() {
+      if (!currentWeek) { alert('Nessuna settimana selezionata!'); return; }
+      savedWeeks[currentWeek] = JSON.parse(JSON.stringify(weeks[currentWeek]));
+      delete weeks[currentWeek];
+      saveData();
+      alert('Settimana salvata con successo!');
+      renderWeekTabs(); renderSavedWeeks(); updateStatistics();
+      if (Object.keys(weeks).length>0) showWeek(Object.keys(weeks)[0]);
+      else {
+        currentWeek=null;
+        document.getElementById('weekContent').innerHTML =
+          '<div class="week-content"><p style="text-align:center;color:#94a3b8;font-size:1.2rem;">Nessuna settimana in lavorazione. Crea o richiama una settimana.</p></div>';
+      }
+    }
+    function loadWeek(id) {
+      if (savedWeeks[id]) {
+        weeks[id] = JSON.parse(JSON.stringify(savedWeeks[id]));
+        saveData(); renderWeekTabs(); showWeek(id);
+        alert('Settimana richiamata per modifica!');
+      }
+    }
+    function deleteWeek(id) {
+      if (confirm('Elimini questa settimana?')) {
+        delete savedWeeks[id]; saveData();
+        renderSavedWeeks(); updateStatistics();
+      }
+    }
+
+    function renderWeekTabs() {
+      const c = document.getElementById('weekTabs'); c.innerHTML='';
+      if (!Object.keys(weeks).length) {
+        c.innerHTML = '<p style="text-align:center;color:#94a3b8;padding:20px;">Nessuna settimana in lavorazione</p>';
+        return;
+      }
+      Object.keys(weeks).sort().forEach(id=>{
+        const btn = document.createElement('button');
+        btn.className='week-tab'; btn.textContent=`📝 ${formatDateForDisplay(id)}`;
+        btn.onclick=()=>showWeek(id);
+        if(id===currentWeek)btn.classList.add('active');
+        c.append(btn);
+      });
+    }
+    function renderSavedWeeks() {
+      const c=document.getElementById('savedWeeksList'); c.innerHTML='';
+      if (!Object.keys(savedWeeks).length) {
+        c.innerHTML = '<p style="text-align:center;color:#64748b;padding:20px;">Nessuna settimana salvata</p>';
+        return;
+      }
+      c.innerHTML = Object.keys(savedWeeks).sort().map(id=>{
+        const w=savedWeeks[id];
+        const tot = Object.values(w.expenses).reduce((a,b)=>a+(parseFloat(b)||0),0);
+        return `
+          <div class="saved-week-item">
+            <div class="saved-week-info">
+              <div class="saved-week-date">📅 ${formatDateForDisplay(id)}</div>
+              <div class="saved-week-total">Totale: €${tot.toFixed(2)}</div>
+            </div>
+            <div class="saved-week-actions">
+              <button class="btn btn-primary btn-small" onclick="loadWeek('${id}')">📝 Richiama</button>
+              <button class="btn btn-secondary btn-small" onclick="deleteWeek('${id}')">🗑️ Elimina</button>
+            </div>
+          </div>`;
+      }).join('');
+    }
+    function showWeek(id) {
+      currentWeek=id; renderWeekTabs(); renderWeekContent();
+    }
+    function renderWeekContent() {
+      const cont = document.getElementById('weekContent');
+      const w = weeks[currentWeek];
+      const tot = Object.values(w.expenses).reduce((a,b)=>a+(parseFloat(b)||0),0);
+      cont.innerHTML = `
+        <div class="week-content">
+          <div class="week-header">
+            <h2 class="week-title">📅 Settimana del ${formatDateForDisplay(currentWeek)}</h2>
+            <div class="week-total">Totale: €${tot.toFixed(2)}</div>
+          </div>
+          <div class="expenses-grid">
+            ${EXPENSE_CATEGORIES.map(cat=>`
+              <div class="expense-item">
+                <div class="expense-label">${cat}</div>
+                <input type="number" class="expense-input"
+                  value="${w.expenses[cat]||0}"
+                  step="0.01" placeholder="0.00"
+                  onchange="updateExpense('${cat}',this.value)">
+              </div>
+            `).join('')}
+          </div>
+        </div>`;
+    }
+    function updateExpense(cat,val){
+      weeks[currentWeek].expenses[cat]=parseFloat(val)||0;
+      saveData(); renderWeekContent();
+    }
+    function formatDateForDisplay(s){
+      return new Date(s+'T00:00:00')
+        .toLocaleDateString('it-IT',{day:'numeric',month:'short',year:'numeric'});
+    }
+
+    function toggleStatistics(){
+      const s=document.getElementById('statisticsSection');
+      s.classList.toggle('hidden'); updateStatistics();
+    }
+    function updateStatistics(){
+      const all=savedWeeks, keys=Object.keys(all),
+            count=keys.length,
+            total=keys.reduce((sum,id)=>
+              sum+Object.values(all[id].expenses).reduce((a,b)=>a+(parseFloat(b)||0),0)
+            ,0),
+            avg=count?total/count:0;
+      document.getElementById('totalWeeks').textContent=count;
+      document.getElementById('totalExpenses').textContent=`€${total.toFixed(2)}`;
+      document.getElementById('avgWeekly').textContent=`€${avg.toFixed(2)}`;
+      renderCategoryChart(); renderWeekComparisonChart();
+    }
+    function renderCategoryChart(){
+      const totals={}, cats=EXPENSE_CATEGORIES;
+      cats.forEach(c=>totals[c]=0);
+      Object.values(savedWeeks).forEach(w=>{
+        Object.entries(w.expenses).forEach(([c,a])=>totals[c]+=parseFloat(a)||0);
+      });
+      const sorted=Object.entries(totals).sort(([,a],[,b])=>b-a).slice(0,10),
+            max=sorted.length?sorted[0][1]:0;
+      const html=sorted.map(([c,t])=>`
+        <div style="display:flex;align-items:center;margin-bottom:15px;">
+          <div style="width:120px;font-weight:600;color:#555;font-size:14px;">${c}</div>
+          <div style="flex:1;background:#f0f0f0;border-radius:10px;margin:0 15px;height:25px;">
+            <div style="background:linear-gradient(45deg,#667eea,#764ba2);
+                        height:100%;border-radius:10px;width:${max?Math.max(5,(t/max)*100):5}%;">
+            </div>
+          </div>
+          <div style="width:80px;text-align:right;font-weight:600;color:#667eea;">
+            €${t.toFixed(2)}
+          </div>
+        </div>`).join('');
+      document.getElementById('categoryChart').innerHTML=
+        html||'<p style="color:#999;text-align:center;">Nessun dato disponibile</p>';
+    }
+    function renderWeekComparisonChart(){
+      const keys=Object.keys(savedWeeks);
+      const container=document.getElementById('weekComparisonChart');
+      if(keys.length<2){ container.style.display='none'; return; }
+      container.style.display='block';
+      const totals=keys.map(id=>
+        Object.values(savedWeeks[id].expenses).reduce((a,b)=>a+(parseFloat(b)||0),0)
+      );
+      const max=Math.max(...totals);
+      const html=keys.sort().map((id,i)=>`
+        <div style="display:flex;align-items:center;margin-bottom:20px;">
+          <div style="width:120px;font-weight:600;color:#555;font-size:14px;">
+            ${formatDateForDisplay(id)}
+          </div>
+          <div style="flex:1;background:#f0f0f0;border-radius:10px;margin:0 15px;height:30px;">
+            <div style="background:linear-gradient(45deg,#4facfe,#00f2fe);
+                        height:100%;border-radius:10px;width:${max?Math.max(5,(totals[i]/max)*100):5}%;
+                        display:flex;align-items:center;justify-content:center;
+                        color:white;font-weight:600;font-size:12px;">
+              ${(max?((totals[i]/max)*100):0).toFixed(0)}%
+            </div>
+          </div>
+          <div style="width:100px;text-align:right;font-weight:600;color:#4facfe;">
+            €${totals[i].toFixed(2)}
+          </div>
+        </div>`).join('');
+      document.getElementById('weekChart').innerHTML=html;
+    }
+
+    function exportCurrentWeek(){
+      if(!currentWeek){ alert('Seleziona una settimana!'); return; }
+      let csv='Categoria,Importo\n', tot=0;
+      Object.entries(weeks[currentWeek].expenses).forEach(([c,a])=>{
+        csv+=`"${c}",${a}\n`; tot+=parseFloat(a)||0;
+      });
+      csv+=`"TOTALE",${tot.toFixed(2)}\n`;
+      downloadCSV(csv,`spese_settimana_${currentWeek}.csv`);
+    }
+    function exportAllData(){
+      let csv='Settimana,Categoria,Importo\n';
+      Object.entries(savedWeeks).forEach(([id,w])=>{
+        Object.entries(w.expenses).forEach(([c,a])=>{
+          csv+=`"${formatDateForDisplay(id)}","${c}",${a}\n`;
+        });
+      });
+      downloadCSV(csv,'spese_discoteca_completo.csv');
+    }
+    function downloadCSV(content,filename){
+      const blob=new Blob([content],{type:'text/csv;charset=utf-8;'});
+      const link=document.createElement('a');
+      link.href=URL.createObjectURL(blob);
+      link.download=filename;
+      link.style.display='none';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    function getNextMondayDate(){
+      const d=new Date(), day=d.getDay(), diff=day===0?1:8-day;
+      d.setDate(d.getDate()+diff);
+      return d.toISOString().split('T')[0];
+    }
+  </script>
 </body>
 </html>
