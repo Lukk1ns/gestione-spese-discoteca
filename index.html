@@ -87,6 +87,16 @@
             background: #3d3d3d;
         }
 
+        .btn-archive {
+            background: #6c5ce7;
+            color: white;
+        }
+
+        .btn-archive:hover {
+            background: #5f3dc4;
+            transform: translateY(-2px);
+        }
+
         .week-card {
             background: #1a1a1a;
             border-radius: 20px;
@@ -95,6 +105,11 @@
             box-shadow: 0 5px 20px rgba(0,0,0,0.3);
             border: 1px solid #333;
             transition: all 0.3s ease;
+        }
+
+        .week-card.archived {
+            opacity: 0.8;
+            border-color: #6c5ce7;
         }
 
         .week-card:hover {
@@ -116,9 +131,18 @@
             color: #ff6b6b;
         }
 
+        .archived-badge {
+            background: #6c5ce7;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            margin-left: 10px;
+        }
+
         .expense-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
             gap: 15px;
             margin-bottom: 20px;
         }
@@ -142,14 +166,20 @@
             display: block;
         }
 
-        .expense-controls {
-            display: flex;
-            align-items: center;
+        .expense-inputs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
             gap: 10px;
         }
 
+        .input-group {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
         .expense-input {
-            width: 120px;
+            width: 100%;
             background: #1a1a1a;
             border: 1px solid #444;
             color: white;
@@ -165,31 +195,12 @@
             box-shadow: 0 0 5px rgba(255, 107, 107, 0.3);
         }
 
-        .payment-method {
-            display: flex;
-            gap: 5px;
-            margin-left: auto;
-        }
-
-        .payment-btn {
-            padding: 6px 12px;
-            border: 1px solid #444;
-            background: #1a1a1a;
+        .payment-label {
+            font-size: 0.9em;
             color: #888;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 14px;
-            transition: all 0.2s ease;
-        }
-
-        .payment-btn.active {
-            background: #ff6b6b;
-            color: white;
-            border-color: #ff6b6b;
-        }
-
-        .payment-btn:hover {
-            border-color: #ff6b6b;
+            display: flex;
+            align-items: center;
+            gap: 3px;
         }
 
         .total-section {
@@ -198,13 +209,6 @@
             border-radius: 10px;
             margin-top: 20px;
             text-align: center;
-        }
-
-        .total-row {
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-            margin: 10px 0;
         }
 
         .total-amount {
@@ -233,6 +237,42 @@
             color: #4ecdc4;
             font-size: 1.2em;
             font-weight: bold;
+        }
+
+        .archive-section {
+            background: #1a1a1a;
+            border-radius: 20px;
+            padding: 30px;
+            margin-top: 40px;
+            border: 2px solid #6c5ce7;
+        }
+
+        .archive-title {
+            font-size: 1.5em;
+            color: #6c5ce7;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .archived-weeks-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 15px;
+        }
+
+        .archived-week-card {
+            background: #2d2d2d;
+            padding: 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 1px solid #444;
+        }
+
+        .archived-week-card:hover {
+            background: #3d3d3d;
+            transform: scale(1.02);
+            border-color: #6c5ce7;
         }
 
         .modal {
@@ -332,6 +372,10 @@
                 flex-direction: column;
                 gap: 10px;
             }
+
+            .expense-inputs {
+                grid-template-columns: 1fr;
+            }
         }
 
         @media print {
@@ -378,6 +422,11 @@
         </div>
 
         <div id="weeksContainer"></div>
+
+        <div class="archive-section" id="archiveSection" style="display: none;">
+            <h2 class="archive-title">📁 Settimane Archiviate</h2>
+            <div class="archived-weeks-grid" id="archivedWeeksContainer"></div>
+        </div>
     </div>
 
     <!-- Modal per statistiche -->
@@ -410,26 +459,29 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script>
-        // Categorie predefinite con le nuove aggiunte
+        // Categorie predefinite (rimosse quelle richieste)
         const defaultCategories = [
-            'PERSONALE', 'PERSONALE CASH', 'SICUREZZA', 'SICUREZZA CASH',
-            'AFFITTO', 'CORRENTE', 'SIAE', 'CRISTIAN', 'CRISTIAN CASH', 
-            'LUKA', 'LUKA CASH', 'TASSE', 'FORNITORE', 'TONI', 'CARTA', 
-            'TOSANO', 'CINESI', 'BHREMA', 'FRUTTA', 'SPESE VARIE', 'SPESE EXTRA'
+            'PERSONALE', 'PERSONALE CASH', 'SICUREZZA',
+            'AFFITTO', 'CORRENTE', 'SIAE', 'CRISTIAN', 
+            'LUKA', 'TASSE', 'FORNITORE', 'TONI', 'CARTA', 
+            'BHREMA', 'FRUTTA'
         ];
 
-        // Dati memorizzati - ora con localStorage!
+        // Dati memorizzati
         let weeksData = JSON.parse(localStorage.getItem('papiWeeksData')) || [];
+        let archivedWeeks = JSON.parse(localStorage.getItem('papiArchivedWeeks')) || [];
         let weekIdCounter = parseInt(localStorage.getItem('papiWeekIdCounter')) || 0;
         let charts = {};
 
         // Inizializzazione
         document.addEventListener('DOMContentLoaded', function() {
             renderWeeks();
+            renderArchivedWeeks();
         });
 
         function saveData() {
             localStorage.setItem('papiWeeksData', JSON.stringify(weeksData));
+            localStorage.setItem('papiArchivedWeeks', JSON.stringify(archivedWeeks));
             localStorage.setItem('papiWeekIdCounter', weekIdCounter.toString());
         }
 
@@ -439,23 +491,21 @@
             week.bankTotal = 0;
 
             // Calcola spese predefinite
-            Object.entries(week.expenses).forEach(([cat, amount]) => {
-                week.total += amount;
-                if (week.paymentMethods[cat] === 'cash') {
-                    week.cashTotal += amount;
-                } else if (week.paymentMethods[cat] === 'bank') {
-                    week.bankTotal += amount;
-                }
+            Object.entries(week.expenses).forEach(([cat, data]) => {
+                const cashAmount = data.cash || 0;
+                const bankAmount = data.bank || 0;
+                week.total += cashAmount + bankAmount;
+                week.cashTotal += cashAmount;
+                week.bankTotal += bankAmount;
             });
 
             // Calcola spese personalizzate
             Object.entries(week.customExpenses).forEach(([cat, data]) => {
-                week.total += data.amount;
-                if (data.paymentMethod === 'cash') {
-                    week.cashTotal += data.amount;
-                } else if (data.paymentMethod === 'bank') {
-                    week.bankTotal += data.amount;
-                }
+                const cashAmount = data.cash || 0;
+                const bankAmount = data.bank || 0;
+                week.total += cashAmount + bankAmount;
+                week.cashTotal += cashAmount;
+                week.bankTotal += bankAmount;
             });
         }
 
@@ -470,16 +520,15 @@
                 id: ++weekIdCounter,
                 date: `Settimana ${weekNumber} - ${currentMonth} ${currentYear}`,
                 expenses: {},
-                paymentMethods: {},
                 customExpenses: {},
                 total: 0,
                 cashTotal: 0,
-                bankTotal: 0
+                bankTotal: 0,
+                archived: false
             };
 
             defaultCategories.forEach(cat => {
-                newWeek.expenses[cat] = 0;
-                newWeek.paymentMethods[cat] = null;
+                newWeek.expenses[cat] = { cash: 0, bank: 0 };
             });
 
             weeksData.unshift(newWeek);
@@ -491,22 +540,59 @@
             const container = document.getElementById('weeksContainer');
             container.innerHTML = '';
 
-            weeksData.forEach(week => {
+            const activeWeeks = weeksData.filter(week => !week.archived);
+            activeWeeks.forEach(week => {
                 const weekCard = createWeekCard(week);
                 container.appendChild(weekCard);
             });
         }
 
+        function renderArchivedWeeks() {
+            const container = document.getElementById('archivedWeeksContainer');
+            const section = document.getElementById('archiveSection');
+            
+            if (archivedWeeks.length === 0) {
+                section.style.display = 'none';
+                return;
+            }
+
+            section.style.display = 'block';
+            container.innerHTML = '';
+
+            archivedWeeks.forEach(week => {
+                const card = document.createElement('div');
+                card.className = 'archived-week-card';
+                card.innerHTML = `
+                    <h4 style="color: #6c5ce7; margin-bottom: 10px;">${week.date}</h4>
+                    <div style="font-size: 1.2em; font-weight: bold; color: #ff6b6b;">€ ${week.total.toFixed(2)}</div>
+                    <div style="font-size: 0.9em; color: #888; margin-top: 5px;">
+                        💵 €${week.cashTotal.toFixed(2)} | 🏦 €${week.bankTotal.toFixed(2)}
+                    </div>
+                    <button class="btn btn-secondary" style="margin-top: 10px; width: 100%;" 
+                            onclick="reopenWeek(${week.id})">
+                        📂 Riapri
+                    </button>
+                `;
+                container.appendChild(card);
+            });
+        }
+
         function createWeekCard(week) {
             const card = document.createElement('div');
-            card.className = 'week-card';
+            card.className = week.archived ? 'week-card archived' : 'week-card';
             card.id = `week-${week.id}`;
 
             const header = document.createElement('div');
             header.className = 'week-header';
             header.innerHTML = `
-                <h3 class="week-date">${week.date}</h3>
+                <h3 class="week-date">
+                    ${week.date}
+                    ${week.archived ? '<span class="archived-badge">Archiviata</span>' : ''}
+                </h3>
                 <div>
+                    <button class="btn btn-archive" onclick="archiveWeek(${week.id})">
+                        📁 Archivia
+                    </button>
                     <button class="btn btn-secondary" onclick="exportWeekToPDF(${week.id})">
                         📄 PDF
                     </button>
@@ -521,14 +607,14 @@
             expenseGrid.className = 'expense-grid';
 
             // Spese predefinite
-            for (const [category, amount] of Object.entries(week.expenses)) {
-                const item = createExpenseItem(week.id, category, amount, week.paymentMethods[category], false);
+            for (const [category, data] of Object.entries(week.expenses)) {
+                const item = createExpenseItem(week.id, category, data, false);
                 expenseGrid.appendChild(item);
             }
 
             // Spese personalizzate
             for (const [category, data] of Object.entries(week.customExpenses)) {
-                const item = createExpenseItem(week.id, category, data.amount, data.paymentMethod, true);
+                const item = createExpenseItem(week.id, category, data, true);
                 expenseGrid.appendChild(item);
             }
 
@@ -539,9 +625,8 @@
             customSection.className = 'custom-expense';
             customSection.innerHTML = `
                 <input type="text" id="customName-${week.id}" placeholder="Nome nuova spesa...">
-                <input type="number" id="customAmount-${week.id}" placeholder="Importo">
                 <button class="btn btn-primary" onclick="addCustomExpense(${week.id})">
-                    ➕ Aggiungi
+                    ➕ Aggiungi Voce
                 </button>
             `;
             card.appendChild(customSection);
@@ -568,41 +653,43 @@
             return card;
         }
 
-        function createExpenseItem(weekId, category, amount, paymentMethod, isCustom) {
+        function createExpenseItem(weekId, category, data, isCustom) {
             const item = document.createElement('div');
             item.className = 'expense-item';
             
-            const inputId = isCustom ? `custom-${weekId}-${category}` : `expense-${weekId}-${category}`;
+            const cashAmount = data.cash || 0;
+            const bankAmount = data.bank || 0;
+            const baseName = isCustom ? `custom-${weekId}-${category}` : `expense-${weekId}-${category}`;
             
             item.innerHTML = `
-                <label class="expense-label" for="${inputId}">${category}</label>
-                <div class="expense-controls">
-                    <span>€</span>
-                    <input type="number" 
-                           id="${inputId}"
-                           class="expense-input" 
-                           value="${amount || ''}" 
-                           onchange="updateExpense(${weekId}, '${category}', this.value, ${isCustom})">
-                    <div class="payment-method">
-                        <button class="payment-btn ${paymentMethod === 'cash' ? 'active' : ''}" 
-                                onclick="setPaymentMethod(${weekId}, '${category}', 'cash', ${isCustom})"
-                                id="cash-${inputId}">
-                            💵
-                        </button>
-                        <button class="payment-btn ${paymentMethod === 'bank' ? 'active' : ''}" 
-                                onclick="setPaymentMethod(${weekId}, '${category}', 'bank', ${isCustom})"
-                                id="bank-${inputId}">
-                            🏦
-                        </button>
+                <label class="expense-label">${category}</label>
+                <div class="expense-inputs">
+                    <div class="input-group">
+                        <span class="payment-label">💵 Contanti</span>
+                        <span>€</span>
+                        <input type="number" 
+                               id="cash-${baseName}"
+                               class="expense-input" 
+                               value="${cashAmount || ''}" 
+                               onchange="updateExpense(${weekId}, '${category}', 'cash', this.value, ${isCustom})">
                     </div>
-                    ${isCustom ? `<button onclick="removeCustomExpense(${weekId}, '${category}')" style="background: none; border: none; color: #ff6b6b; cursor: pointer; margin-left: 10px;">❌</button>` : ''}
+                    <div class="input-group">
+                        <span class="payment-label">🏦 Bonifico</span>
+                        <span>€</span>
+                        <input type="number" 
+                               id="bank-${baseName}"
+                               class="expense-input" 
+                               value="${bankAmount || ''}" 
+                               onchange="updateExpense(${weekId}, '${category}', 'bank', this.value, ${isCustom})">
+                    </div>
                 </div>
+                ${isCustom ? `<button onclick="removeCustomExpense(${weekId}, '${category}')" style="background: none; border: none; color: #ff6b6b; cursor: pointer; margin-top: 10px; width: 100%; text-align: center;">❌ Rimuovi</button>` : ''}
             `;
             
             return item;
         }
 
-        function updateExpense(weekId, category, value, isCustom) {
+        function updateExpense(weekId, category, paymentType, value, isCustom) {
             const week = weeksData.find(w => w.id === weekId);
             if (!week) return;
 
@@ -610,38 +697,12 @@
             
             if (isCustom) {
                 if (!week.customExpenses[category]) {
-                    week.customExpenses[category] = { amount: 0, paymentMethod: null };
+                    week.customExpenses[category] = { cash: 0, bank: 0 };
                 }
-                week.customExpenses[category].amount = amount;
+                week.customExpenses[category][paymentType] = amount;
             } else {
-                week.expenses[category] = amount;
-                // Se c'è un importo ma non un metodo di pagamento, imposta contanti di default
-                if (amount > 0 && !week.paymentMethods[category]) {
-                    week.paymentMethods[category] = 'cash';
-                }
+                week.expenses[category][paymentType] = amount;
             }
-
-            calculateWeekTotals(week);
-            updateWeekTotals(weekId, week);
-            saveData();
-        }
-
-        function setPaymentMethod(weekId, category, method, isCustom) {
-            const week = weeksData.find(w => w.id === weekId);
-            if (!week) return;
-
-            if (isCustom) {
-                if (week.customExpenses[category]) {
-                    week.customExpenses[category].paymentMethod = method;
-                }
-            } else {
-                week.paymentMethods[category] = method;
-            }
-
-            // Aggiorna visivamente i bottoni
-            const inputId = isCustom ? `custom-${weekId}-${category}` : `expense-${weekId}-${category}`;
-            document.getElementById(`cash-${inputId}`).classList.toggle('active', method === 'cash');
-            document.getElementById(`bank-${inputId}`).classList.toggle('active', method === 'bank');
 
             calculateWeekTotals(week);
             updateWeekTotals(weekId, week);
@@ -660,10 +721,7 @@
 
         function addCustomExpense(weekId) {
             const nameInput = document.getElementById(`customName-${weekId}`);
-            const amountInput = document.getElementById(`customAmount-${weekId}`);
-            
             const name = nameInput.value.trim();
-            const amount = parseFloat(amountInput.value) || 0;
             
             if (!name) {
                 alert('Inserisci un nome per la spesa!');
@@ -673,12 +731,8 @@
             const week = weeksData.find(w => w.id === weekId);
             if (!week) return;
 
-            week.customExpenses[name] = {
-                amount: amount,
-                paymentMethod: 'cash' // Default a contanti
-            };
+            week.customExpenses[name] = { cash: 0, bank: 0 };
 
-            calculateWeekTotals(week);
             saveData();
             renderWeeks();
         }
@@ -693,16 +747,52 @@
             renderWeeks();
         }
 
+        function archiveWeek(weekId) {
+            const weekIndex = weeksData.findIndex(w => w.id === weekId);
+            if (weekIndex === -1) return;
+
+            const week = weeksData[weekIndex];
+            week.archived = true;
+            
+            // Sposta dalla lista attiva a quella archiviata
+            weeksData.splice(weekIndex, 1);
+            archivedWeeks.unshift(week);
+            
+            saveData();
+            renderWeeks();
+            renderArchivedWeeks();
+        }
+
+        function reopenWeek(weekId) {
+            const archivedIndex = archivedWeeks.findIndex(w => w.id === weekId);
+            if (archivedIndex === -1) return;
+
+            const week = archivedWeeks[archivedIndex];
+            week.archived = false;
+            
+            // Sposta dalla lista archiviata a quella attiva
+            archivedWeeks.splice(archivedIndex, 1);
+            weeksData.unshift(week);
+            
+            saveData();
+            renderWeeks();
+            renderArchivedWeeks();
+        }
+
         function deleteWeek(weekId) {
             if (confirm('Sei sicuro di voler eliminare questa settimana?')) {
                 weeksData = weeksData.filter(w => w.id !== weekId);
+                archivedWeeks = archivedWeeks.filter(w => w.id !== weekId);
                 saveData();
                 renderWeeks();
+                renderArchivedWeeks();
             }
         }
 
         function showStatistics() {
-            if (weeksData.length < 2) {
+            const allWeeks = [...weeksData, ...archivedWeeks];
+            
+            if (allWeeks.length < 2) {
                 alert('Servono almeno 2 settimane per vedere le statistiche!');
                 return;
             }
@@ -710,12 +800,12 @@
             const modal = document.getElementById('statsModal');
             const content = document.getElementById('statsContent');
             
-            const totalExpenses = weeksData.reduce((sum, week) => sum + week.total, 0);
-            const totalCash = weeksData.reduce((sum, week) => sum + week.cashTotal, 0);
-            const totalBank = weeksData.reduce((sum, week) => sum + week.bankTotal, 0);
-            const avgWeekly = totalExpenses / weeksData.length;
-            const maxWeek = weeksData.reduce((max, week) => week.total > max.total ? week : max);
-            const minWeek = weeksData.reduce((min, week) => week.total < min.total ? week : min);
+            const totalExpenses = allWeeks.reduce((sum, week) => sum + week.total, 0);
+            const totalCash = allWeeks.reduce((sum, week) => sum + week.cashTotal, 0);
+            const totalBank = allWeeks.reduce((sum, week) => sum + week.bankTotal, 0);
+            const avgWeekly = totalExpenses / allWeeks.length;
+            const maxWeek = allWeeks.reduce((max, week) => week.total > max.total ? week : max);
+            const minWeek = allWeeks.reduce((min, week) => week.total < min.total ? week : min);
 
             content.innerHTML = `
                 <div class="stats-grid">
@@ -758,87 +848,89 @@
                     charts.weekly.destroy();
                 }
 
-                const ctx = document.getElementById('weeklyChart').getContext('2d');
-                charts.weekly = new Chart(ctx, {
-                    type: 'line',
-                    data: {
-                        labels: weeksData.map(w => w.date).reverse(),
-                        datasets: [{
-                            label: 'Spese Totali',
-                            data: weeksData.map(w => w.total).reverse(),
-                            borderColor: '#ff6b6b',
-                            backgroundColor: 'rgba(255, 107, 107, 0.1)',
-                            tension: 0.4
-                        }, {
-                            label: 'Contanti',
-                            data: weeksData.map(w => w.cashTotal).reverse(),
-                            borderColor: '#4ecdc4',
-                            backgroundColor: 'rgba(78, 205, 196, 0.1)',
-                            tension: 0.4
-                        }, {
-                            label: 'Bonifici',
-                            data: weeksData.map(w => w.bankTotal).reverse(),
-                            borderColor: '#45b7d1',
-                            backgroundColor: 'rgba(69, 183, 209, 0.1)',
-                            tension: 0.4
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: {
-                                labels: { color: '#fff' }
-                            }
-                        },
-                        scales: {
-                            y: {
-                                ticks: { color: '#fff' },
-                                grid: { color: '#333' }
-                            },
-                            x: {
-                                ticks: { color: '#fff' },
-                                grid: { color: '#333' }
-                            }
-                        }
-                    }
-                });
-            }, 100);
-        }
+                const ctx = document. getElementById('weeklyChart').getContext('2d');
+               charts.weekly = new Chart(ctx, {
+                   type: 'line',
+                   data: {
+                       labels: allWeeks.map(w => w.date).reverse(),
+                       datasets: [{
+                           label: 'Spese Totali',
+                           data: allWeeks.map(w => w.total).reverse(),
+                           borderColor: '#ff6b6b',
+                           backgroundColor: 'rgba(255, 107, 107, 0.1)',
+                           tension: 0.4
+                       }, {
+                           label: 'Contanti',
+                           data: allWeeks.map(w => w.cashTotal).reverse(),
+                           borderColor: '#4ecdc4',
+                           backgroundColor: 'rgba(78, 205, 196, 0.1)',
+                           tension: 0.4
+                       }, {
+                           label: 'Bonifici',
+                           data: allWeeks.map(w => w.bankTotal).reverse(),
+                           borderColor: '#45b7d1',
+                           backgroundColor: 'rgba(69, 183, 209, 0.1)',
+                           tension: 0.4
+                       }]
+                   },
+                   options: {
+                       responsive: true,
+                       maintainAspectRatio: false,
+                       plugins: {
+                           legend: {
+                               labels: { color: '#fff' }
+                           }
+                       },
+                       scales: {
+                           y: {
+                               ticks: { color: '#fff' },
+                               grid: { color: '#333' }
+                           },
+                           x: {
+                               ticks: { color: '#fff' },
+                               grid: { color: '#333' }
+                           }
+                       }
+                   }
+               });
+           }, 100);
+       }
 
-        function showCategoryAnalysis() {
-            const modal = document.getElementById('categoryModal');
-            const content = document.getElementById('categoryContent');
-            
-            // Calcola totali per categoria
-            const categoryTotals = {};
-            
-            weeksData.forEach(week => {
-                Object.entries(week.expenses).forEach(([cat, amount]) => {
-                    categoryTotals[cat] = (categoryTotals[cat] || 0) + amount;
-                });
-                Object.entries(week.customExpenses).forEach(([cat, data]) => {
-                    categoryTotals[cat] = (categoryTotals[cat] || 0) + data.amount;
-                });
-            });
+       function showCategoryAnalysis() {
+           const allWeeks = [...weeksData, ...archivedWeeks];
+           const modal = document.getElementById('categoryModal');
+           const content = document.getElementById('categoryContent');
+           
+           // Calcola totali per categoria
+           const categoryTotals = {};
+           
+           allWeeks.forEach(week => {
+               Object.entries(week.expenses).forEach(([cat, data]) => {
+                   const total = (data.cash || 0) + (data.bank || 0);
+                   categoryTotals[cat] = (categoryTotals[cat] || 0) + total;
+               });
+               Object.entries(week.customExpenses).forEach(([cat, data]) => {
+                   const total = (data.cash || 0) + (data.bank || 0);
+                   categoryTotals[cat] = (categoryTotals[cat] || 0) + total;
+               });
+           });
 
-            // Ordina per importo
-            const sortedCategories = Object.entries(categoryTotals)
-                .sort((a, b) => b[1] - a[1])
-                .filter(([_, amount]) => amount > 0);
+           // Ordina per importo
+           const sortedCategories = Object.entries(categoryTotals)
+               .sort((a, b) => b[1] - a[1])
+               .filter(([_, amount]) => amount > 0);
 
-            content.innerHTML = `
-                <div class="stats-grid">
-                    ${sortedCategories.slice(0, 6).map(([cat, amount]) => `
-                        <div class="stat-card">
-                            <div class="stat-title">${cat}</div>
-                            <div class="stat-value">€ ${amount.toFixed(2)}</div>
-                        </div>
-                    `).join('')}
-                </div>
-                <div class="chart-container">
-
-<canvas id="categoryChart"></canvas>
+           content.innerHTML = `
+               <div class="stats-grid">
+                   ${sortedCategories.slice(0, 6).map(([cat, amount]) => `
+                       <div class="stat-card">
+                           <div class="stat-title">${cat}</div>
+                           <div class="stat-value">€ ${amount.toFixed(2)}</div>
+                       </div>
+                   `).join('')}
+               </div>
+               <div class="chart-container">
+                   <canvas id="categoryChart"></canvas>
                </div>
            `;
 
@@ -879,42 +971,33 @@
        }
 
        function showPaymentMethodStats() {
+           const allWeeks = [...weeksData, ...archivedWeeks];
            const modal = document.getElementById('paymentModal');
            const content = document.getElementById('paymentContent');
            
            // Calcola totali per metodo di pagamento per categoria
            const paymentByCategory = {};
            
-           weeksData.forEach(week => {
-               Object.entries(week.expenses).forEach(([cat, amount]) => {
-                   if (amount > 0) {
-                       if (!paymentByCategory[cat]) {
-                           paymentByCategory[cat] = { cash: 0, bank: 0 };
-                       }
-                       if (week.paymentMethods[cat] === 'cash') {
-                           paymentByCategory[cat].cash += amount;
-                       } else if (week.paymentMethods[cat] === 'bank') {
-                           paymentByCategory[cat].bank += amount;
-                       }
+           allWeeks.forEach(week => {
+               Object.entries(week.expenses).forEach(([cat, data]) => {
+                   if (!paymentByCategory[cat]) {
+                       paymentByCategory[cat] = { cash: 0, bank: 0 };
                    }
+                   paymentByCategory[cat].cash += data.cash || 0;
+                   paymentByCategory[cat].bank += data.bank || 0;
                });
                
                Object.entries(week.customExpenses).forEach(([cat, data]) => {
-                   if (data.amount > 0) {
-                       if (!paymentByCategory[cat]) {
-                           paymentByCategory[cat] = { cash: 0, bank: 0 };
-                       }
-                       if (data.paymentMethod === 'cash') {
-                           paymentByCategory[cat].cash += data.amount;
-                       } else if (data.paymentMethod === 'bank') {
-                           paymentByCategory[cat].bank += data.amount;
-                       }
+                   if (!paymentByCategory[cat]) {
+                       paymentByCategory[cat] = { cash: 0, bank: 0 };
                    }
+                   paymentByCategory[cat].cash += data.cash || 0;
+                   paymentByCategory[cat].bank += data.bank || 0;
                });
            });
 
-           const totalCash = weeksData.reduce((sum, week) => sum + week.cashTotal, 0);
-           const totalBank = weeksData.reduce((sum, week) => sum + week.bankTotal, 0);
+           const totalCash = allWeeks.reduce((sum, week) => sum + week.cashTotal, 0);
+           const totalBank = allWeeks.reduce((sum, week) => sum + week.bankTotal, 0);
            const total = totalCash + totalBank;
 
            content.innerHTML = `
@@ -1053,7 +1136,7 @@
        }
 
        function exportWeekToPDF(weekId) {
-           const week = weeksData.find(w => w.id === weekId);
+           const week = [...weeksData, ...archivedWeeks].find(w => w.id === weekId);
            if (!week) return;
 
            const element = document.getElementById(`week-${weekId}`);
@@ -1076,12 +1159,36 @@
                <h2 style="text-align: center; margin-bottom: 20px;">Report Completo</h2>
            `;
 
-           weeksData.forEach(week => {
-               const weekClone = createWeekCard(week);
-               // Rimuovi i bottoni per il PDF
-               weekClone.querySelectorAll('button').forEach(btn => btn.remove());
-               content.appendChild(weekClone);
-           });
+           // Aggiungi settimane attive
+           if (weeksData.length > 0) {
+               const activeTitle = document.createElement('h3');
+               activeTitle.textContent = 'Settimane Attive';
+               activeTitle.style.marginTop = '30px';
+               activeTitle.style.marginBottom = '20px';
+               content.appendChild(activeTitle);
+
+               weeksData.forEach(week => {
+                   const weekClone = createWeekCard(week);
+                   weekClone.querySelectorAll('button').forEach(btn => btn.remove());
+                   content.appendChild(weekClone);
+               });
+           }
+
+           // Aggiungi settimane archiviate
+           if (archivedWeeks.length > 0) {
+               const archivedTitle = document.createElement('h3');
+               archivedTitle.textContent = 'Settimane Archiviate';
+               archivedTitle.style.marginTop = '30px';
+               archivedTitle.style.marginBottom = '20px';
+               archivedTitle.style.color = '#6c5ce7';
+               content.appendChild(archivedTitle);
+
+               archivedWeeks.forEach(week => {
+                   const weekClone = createWeekCard(week);
+                   weekClone.querySelectorAll('button').forEach(btn => btn.remove());
+                   content.appendChild(weekClone);
+               });
+           }
 
            const opt = {
                margin: 10,
