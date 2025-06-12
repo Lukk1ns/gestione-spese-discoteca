@@ -160,7 +160,7 @@
             font-size: 0.9em;
         }
 
-        .income-input-group input {
+        .income-input-group input, .income-input-group select {
             background: #1a1a1a;
             border: 1px solid #444;
             color: white;
@@ -793,8 +793,19 @@
                     <input type="number" id="incomeBank" placeholder="0.00">
                 </div>
                 <div class="income-input-group">
-                    <label>📝 Descrizione</label>
-                    <input type="text" id="incomeDescription" placeholder="Es. Incasso serata">
+                    <label>📝 Categoria Incasso</label>
+                    <select id="incomeDescription" onchange="handleIncomeDescriptionChange()">
+                        <option value="">Seleziona categoria...</option>
+                        <option value="Incasso Serata">Incasso Serata</option>
+                        <option value="Incasso Bar">Incasso Bar</option>
+                        <option value="Incasso Evento">Incasso Evento</option>
+                        <option value="divider" disabled>──────────────</option>
+                        <optgroup label="Categorie Spese" id="expenseCategoriesGroup">
+                        </optgroup>
+                        <option value="divider" disabled>──────────────</option>
+                        <option value="custom">➕ Altro (specifica)</option>
+                    </select>
+                    <input type="text" id="customIncomeDescription" placeholder="Specifica descrizione..." style="margin-top: 10px; display: none;">
                 </div>
             </div>
             <button class="btn btn-gold" style="width: 100%; margin-top: 20px;" onclick="confirmIncome()">
@@ -896,6 +907,7 @@
             renderWeeks();
             renderArchivedWeeks();
             renderPaymentsTracker();
+            updateIncomeCategories();
         });
 
         function saveData() {
@@ -948,14 +960,51 @@
             return total;
         }
 
+        function updateIncomeCategories() {
+            const select = document.getElementById('expenseCategoriesGroup');
+            select.innerHTML = '';
+            
+            // Raccogli tutte le categorie uniche dalle settimane
+            const allCategories = new Set(defaultCategories);
+            
+            [...weeksData, ...archivedWeeks].forEach(week => {
+                Object.keys(week.expenses).forEach(cat => allCategories.add(cat));
+                Object.keys(week.customExpenses).forEach(cat => allCategories.add(cat));
+            });
+            
+            // Aggiungi le categorie al select
+            Array.from(allCategories).sort().forEach(cat => {
+                const option = document.createElement('option');
+                option.value = `Incasso ${cat}`;
+                option.textContent = cat;
+                select.appendChild(option);
+            });
+        }
+
+        function handleIncomeDescriptionChange() {
+            const select = document.getElementById('incomeDescription');
+            const customInput = document.getElementById('customIncomeDescription');
+            
+            if (select.value === 'custom') {
+                customInput.style.display = 'block';
+                customInput.focus();
+            } else {
+                customInput.style.display = 'none';
+                customInput.value = '';
+            }
+        }
+
         function showIncomeModal() {
+            updateIncomeCategories();
             document.getElementById('incomeModal').style.display = 'flex';
         }
 
         function confirmIncome() {
             const cashAmount = parseFloat(document.getElementById('incomeCash').value) || 0;
             const bankAmount = parseFloat(document.getElementById('incomeBank').value) || 0;
-            const description = document.getElementById('incomeDescription').value || 'Incasso';
+            const selectValue = document.getElementById('incomeDescription').value;
+            const customValue = document.getElementById('customIncomeDescription').value;
+            const description = selectValue === 'custom' ? (customValue || 'Incasso') : (selectValue || 'Incasso');
             
             if (cashAmount === 0 && bankAmount === 0) {
                 alert('Inserisci almeno un importo!');
@@ -984,6 +1033,8 @@
             document.getElementById('incomeCash').value = '';
             document.getElementById('incomeBank').value = '';
             document.getElementById('incomeDescription').value = '';
+            document.getElementById('customIncomeDescription').value = '';
+            document.getElementById('customIncomeDescription').style.display = 'none';
         }
 
         function showInitialBalanceModal() {
