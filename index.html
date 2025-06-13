@@ -101,12 +101,24 @@
             color: #2ecc71;
         }
 
+        .account-amount.cash.negative {
+            color: #e74c3c;
+        }
+
         .account-amount.bank {
             color: #3498db;
         }
 
+        .account-amount.bank.negative {
+            color: #e74c3c;
+        }
+
         .account-amount.total {
             color: #f39c12;
+        }
+
+        .account-amount.total.negative {
+            color: #e74c3c;
         }
 
         .pending-payments {
@@ -225,6 +237,17 @@
 
         .btn-success:hover {
             background: #00a383;
+        }
+
+        .btn-danger {
+            background: #e74c3c;
+            color: white;
+            padding: 6px 12px;
+            font-size: 14px;
+        }
+
+        .btn-danger:hover {
+            background: #c0392b;
         }
 
         .week-card {
@@ -586,7 +609,7 @@
             padding: 20px;
             border-radius: 10px;
             margin-top: 20px;
-            max-height: 300px;
+            max-height: 400px;
             overflow-y: auto;
         }
 
@@ -617,6 +640,12 @@
 
         .transaction-amount.negative {
             color: #e74c3c;
+        }
+
+        .transaction-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
         @media (max-width: 768px) {
@@ -785,6 +814,10 @@
             <h2 style="margin-bottom: 20px; color: #f39c12;">➕ Registra Incasso</h2>
             <div class="income-inputs">
                 <div class="income-input-group">
+                    <label>📅 Data Incasso</label>
+                    <input type="date" id="incomeDate" value="">
+                </div>
+                <div class="income-input-group">
                     <label>💵 Incasso Contanti</label>
                     <input type="number" id="incomeCash" placeholder="0.00">
                 </div>
@@ -793,19 +826,8 @@
                     <input type="number" id="incomeBank" placeholder="0.00">
                 </div>
                 <div class="income-input-group">
-                    <label>📝 Categoria Incasso</label>
-                    <select id="incomeDescription" onchange="handleIncomeDescriptionChange()">
-                        <option value="">Seleziona categoria...</option>
-                        <option value="Incasso Serata">Incasso Serata</option>
-                        <option value="Incasso Bar">Incasso Bar</option>
-                        <option value="Incasso Evento">Incasso Evento</option>
-                        <option value="divider" disabled>──────────────</option>
-                        <optgroup label="Categorie Spese" id="expenseCategoriesGroup">
-                        </optgroup>
-                        <option value="divider" disabled>──────────────</option>
-                        <option value="custom">➕ Altro (specifica)</option>
-                    </select>
-                    <input type="text" id="customIncomeDescription" placeholder="Specifica descrizione..." style="margin-top: 10px; display: none;">
+                    <label>📝 Descrizione</label>
+                    <input type="text" id="incomeDescription" placeholder="Es. Incasso serata">
                 </div>
             </div>
             <button class="btn btn-gold" style="width: 100%; margin-top: 20px;" onclick="confirmIncome()">
@@ -903,11 +925,14 @@
             document.getElementById('monthSelect').value = now.getMonth();
             document.getElementById('yearSelect').value = now.getFullYear();
             
+            // Imposta data corrente nel campo data incasso
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('incomeDate').value = today;
+            
             updateAccountDisplay();
             renderWeeks();
             renderArchivedWeeks();
             renderPaymentsTracker();
-            updateIncomeCategories();
         });
 
         function saveData() {
@@ -921,9 +946,33 @@
         }
 
         function updateAccountDisplay() {
-            document.getElementById('cashBalance').textContent = `€ ${accountBalance.cash.toFixed(2)}`;
-            document.getElementById('bankBalance').textContent = `€ ${accountBalance.bank.toFixed(2)}`;
-            document.getElementById('totalBalance').textContent = `€ ${(accountBalance.cash + accountBalance.bank).toFixed(2)}`;
+            const cashEl = document.getElementById('cashBalance');
+            const bankEl = document.getElementById('bankBalance');
+            const totalEl = document.getElementById('totalBalance');
+            
+            // Aggiungi classe negative se il saldo è negativo
+            if (accountBalance.cash < 0) {
+                cashEl.classList.add('negative');
+            } else {
+                cashEl.classList.remove('negative');
+            }
+            
+            if (accountBalance.bank < 0) {
+                bankEl.classList.add('negative');
+            } else {
+                bankEl.classList.remove('negative');
+            }
+            
+            const total = accountBalance.cash + accountBalance.bank;
+            if (total < 0) {
+                totalEl.classList.add('negative');
+            } else {
+                totalEl.classList.remove('negative');
+            }
+            
+            cashEl.textContent = `€ ${accountBalance.cash.toFixed(2)}`;
+            bankEl.textContent = `€ ${accountBalance.bank.toFixed(2)}`;
+            totalEl.textContent = `€ ${total.toFixed(2)}`;
             
             // Calcola pagamenti pendenti
             const pendingTotal = calculatePendingPayments();
@@ -960,54 +1009,26 @@
             return total;
         }
 
-        function updateIncomeCategories() {
-            const select = document.getElementById('expenseCategoriesGroup');
-            select.innerHTML = '';
-            
-            // Raccogli tutte le categorie uniche dalle settimane
-            const allCategories = new Set(defaultCategories);
-            
-            [...weeksData, ...archivedWeeks].forEach(week => {
-                Object.keys(week.expenses).forEach(cat => allCategories.add(cat));
-                Object.keys(week.customExpenses).forEach(cat => allCategories.add(cat));
-            });
-            
-            // Aggiungi le categorie al select
-            Array.from(allCategories).sort().forEach(cat => {
-                const option = document.createElement('option');
-                option.value = `Incasso ${cat}`;
-                option.textContent = cat;
-                select.appendChild(option);
-            });
-        }
-
-        function handleIncomeDescriptionChange() {
-            const select = document.getElementById('incomeDescription');
-            const customInput = document.getElementById('customIncomeDescription');
-            
-            if (select.value === 'custom') {
-                customInput.style.display = 'block';
-                customInput.focus();
-            } else {
-                customInput.style.display = 'none';
-                customInput.value = '';
-            }
-        }
-
         function showIncomeModal() {
-            updateIncomeCategories();
+            // Imposta data corrente come default
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('incomeDate').value = today;
             document.getElementById('incomeModal').style.display = 'flex';
         }
 
         function confirmIncome() {
+            const incomeDate = document.getElementById('incomeDate').value;
             const cashAmount = parseFloat(document.getElementById('incomeCash').value) || 0;
             const bankAmount = parseFloat(document.getElementById('incomeBank').value) || 0;
-            const selectValue = document.getElementById('incomeDescription').value;
-            const customValue = document.getElementById('customIncomeDescription').value;
-            const description = selectValue === 'custom' ? (customValue || 'Incasso') : (selectValue || 'Incasso');
+            const description = document.getElementById('incomeDescription').value || 'Incasso';
             
             if (cashAmount === 0 && bankAmount === 0) {
                 alert('Inserisci almeno un importo!');
+                return;
+            }
+            
+            if (!incomeDate) {
+                alert('Seleziona una data!');
                 return;
             }
             
@@ -1015,9 +1036,10 @@
             accountBalance.cash += cashAmount;
             accountBalance.bank += bankAmount;
             
-            // Registra transazione
+            // Registra transazione con la data specificata
             transactions.push({
-                date: new Date().toISOString(),
+                id: Date.now(), // Aggiungiamo un ID univoco
+                date: new Date(incomeDate + 'T12:00:00').toISOString(),
                 type: 'income',
                 description: description,
                 cash: cashAmount,
@@ -1033,8 +1055,6 @@
             document.getElementById('incomeCash').value = '';
             document.getElementById('incomeBank').value = '';
             document.getElementById('incomeDescription').value = '';
-            document.getElementById('customIncomeDescription').value = '';
-            document.getElementById('customIncomeDescription').style.display = 'none';
         }
 
         function showInitialBalanceModal() {
@@ -1053,6 +1073,7 @@
                 
                 // Registra transazione
                 transactions.push({
+                    id: Date.now(),
                     date: new Date().toISOString(),
                     type: 'initial',
                     description: 'Impostazione saldo iniziale',
@@ -1064,6 +1085,31 @@
                 saveData();
                 updateAccountDisplay();
                 closeModal('initialBalanceModal');
+            }
+        }
+
+        function deleteTransaction(transactionId) {
+            const transactionIndex = transactions.findIndex(t => t.id === transactionId);
+            if (transactionIndex === -1) return;
+            
+            const transaction = transactions[transactionIndex];
+            
+            if (confirm('Sei sicuro di voler eliminare questo movimento?')) {
+                // Ripristina i saldi
+                if (transaction.type === 'income' || transaction.type === 'initial') {
+                    accountBalance.cash -= transaction.cash;
+                    accountBalance.bank -= transaction.bank;
+                } else if (transaction.type === 'payment') {
+                    accountBalance.cash += transaction.cash;
+                    accountBalance.bank += transaction.bank;
+                }
+                
+                // Rimuovi la transazione
+                transactions.splice(transactionIndex, 1);
+                
+                saveData();
+                updateAccountDisplay();
+                showTransactionHistory(); // Ricarica la vista
             }
         }
 
@@ -1091,8 +1137,13 @@
                                         ${t.cash > 0 ? `<div style="color: #888; font-size: 0.9em;">💵 €${t.cash.toFixed(2)}</div>` : ''}
                                         ${t.bank > 0 ? `<div style="color: #888; font-size: 0.9em;">🏦 €${t.bank.toFixed(2)}</div>` : ''}
                                     </div>
-                                    <div class="transaction-amount ${isIncome ? 'positive' : 'negative'}">
-                                        ${isIncome ? '+' : '-'}€ ${Math.abs(t.total).toFixed(2)}
+                                    <div class="transaction-actions">
+                                        <div class="transaction-amount ${isIncome ? 'positive' : 'negative'}">
+                                            ${isIncome ? '+' : '-'}€ ${Math.abs(t.total).toFixed(2)}
+                                        </div>
+                                        <button class="btn btn-danger" onclick="deleteTransaction(${t.id})">
+                                            🗑️
+                                        </button>
                                     </div>
                                 </div>
                             `;
@@ -1126,6 +1177,7 @@
                         
                         // Registra transazione
                         transactions.push({
+                            id: Date.now(),
                             date: new Date().toISOString(),
                             type: 'payment',
                             description: `Pagamento ${category} - ${week.date}`,
@@ -1143,6 +1195,7 @@
                         
                         // Registra transazione di storno
                         transactions.push({
+                            id: Date.now(),
                             date: new Date().toISOString(),
                             type: 'income',
                             description: `Storno pagamento ${category} - ${week.date}`,
@@ -1157,6 +1210,80 @@
             saveData();
             updateAccountDisplay();
             renderWeeks();
+        }
+
+        function togglePaymentStatus(paymentKey, isChecked) {
+            paymentStatus[paymentKey] = isChecked;
+            
+            // Trova il pagamento corrispondente
+            const parts = paymentKey.split('-');
+            const weekId = parseInt(parts[0]);
+            const isCustom = paymentKey.includes('-custom');
+            
+            let category, paymentType;
+            if (isCustom) {
+                // Format: weekId-category-cash-custom
+                category = parts.slice(1, -2).join('-');
+                paymentType = parts[parts.length - 2];
+            } else {
+                // Format: weekId-category-cash
+                category = parts.slice(1, -1).join('-');
+                paymentType = parts[parts.length - 1];
+            }
+            
+            // Trova la settimana negli archivi
+            const week = archivedWeeks.find(w => w.id === weekId);
+            if (week) {
+                const expenses = isCustom ? week.customExpenses : week.expenses;
+                const data = expenses[category];
+                if (data) {
+                    const amount = data[paymentType] || 0;
+                    
+                    if (amount > 0) {
+                        if (isChecked) {
+                            // Sottrai dal conto quando viene pagato
+                            if (paymentType === 'cash') {
+                                accountBalance.cash -= amount;
+                            } else {
+                                accountBalance.bank -= amount;
+                            }
+                            
+                            // Registra transazione
+                            transactions.push({
+                                id: Date.now(),
+                                date: new Date().toISOString(),
+                                type: 'payment',
+                                description: `Pagamento ${category} - ${week.date} (Archiviato)`,
+                                cash: paymentType === 'cash' ? amount : 0,
+                                bank: paymentType === 'bank' ? amount : 0,
+                                total: amount
+                            });
+                        } else {
+                            // Riaggiungi al conto se viene deselezionato
+                            if (paymentType === 'cash') {
+                                accountBalance.cash += amount;
+                            } else {
+                                accountBalance.bank += amount;
+                            }
+                            
+                            // Registra transazione di storno
+                            transactions.push({
+                                id: Date.now(),
+                                date: new Date().toISOString(),
+                                type: 'income',
+                                description: `Storno pagamento ${category} - ${week.date} (Archiviato)`,
+                                cash: paymentType === 'cash' ? amount : 0,
+                                bank: paymentType === 'bank' ? amount : 0,
+                                total: amount
+                            });
+                        }
+                    }
+                }
+            }
+            
+            saveData();
+            updateAccountDisplay();
+            renderPaymentsTracker();
         }
 
         function showAddWeekModal() {
@@ -1344,12 +1471,6 @@
                 
                 container.appendChild(item);
             });
-        }
-
-        function togglePaymentStatus(paymentKey, isChecked) {
-            paymentStatus[paymentKey] = isChecked;
-            saveData();
-            renderPaymentsTracker();
         }
 
         function createWeekCard(week) {
@@ -1659,6 +1780,10 @@
                 <div class="chart-container">
                     <canvas id="weeklyChart"></canvas>
                 </div>
+                <div class="chart-container" style="margin-top: 30px;">
+                    <h3 style="text-align: center; color: #fff; margin-bottom: 20px;">📈 Andamento Entrate vs Uscite</h3>
+                    <canvas id="cashFlowChart"></canvas>
+                </div>
             `;
 
             modal.style.display = 'flex';
@@ -1691,6 +1816,84 @@
                             borderColor: '#45b7d1',
                             backgroundColor: 'rgba(69, 183, 209, 0.1)',
                             tension: 0.4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                labels: { color: '#fff' }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                ticks: { color: '#fff' },
+                                grid: { color: '#333' }
+                            },
+                            x: {
+                                ticks: { color: '#fff' },
+                                grid: { color: '#333' }
+                            }
+                        }
+                    }
+                });
+
+                // Crea grafico andamento entrate vs uscite
+                if (charts.cashFlow) {
+                    charts.cashFlow.destroy();
+                }
+
+                // Raggruppa transazioni per mese
+                const monthlyData = {};
+                transactions.forEach(t => {
+                    const date = new Date(t.date);
+                    const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+                    
+                    if (!monthlyData[monthKey]) {
+                        monthlyData[monthKey] = { income: 0, expenses: 0 };
+                    }
+                    
+                    if (t.type === 'income' || t.type === 'initial') {
+                        monthlyData[monthKey].income += t.total;
+                    } else if (t.type === 'payment') {
+                        monthlyData[monthKey].expenses += t.total;
+                    }
+                });
+
+                const sortedMonths = Object.keys(monthlyData).sort();
+                const monthLabels = sortedMonths.map(key => {
+                    const [year, month] = key.split('-');
+                    const monthNames = ['Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giu', 'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic'];
+                    return `${monthNames[parseInt(month) - 1]} ${year}`;
+                });
+
+                const ctxFlow = document.getElementById('cashFlowChart').getContext('2d');
+                charts.cashFlow = new Chart(ctxFlow, {
+                    type: 'line',
+                    data: {
+                        labels: monthLabels,
+                        datasets: [{
+                            label: 'Entrate',
+                            data: sortedMonths.map(month => monthlyData[month].income),
+                            borderColor: '#2ecc71',
+                            backgroundColor: 'rgba(46, 204, 113, 0.1)',
+                            tension: 0.4,
+                            borderWidth: 3
+                        }, {
+                            label: 'Uscite',
+                            data: sortedMonths.map(month => monthlyData[month].expenses),
+                            borderColor: '#e74c3c',
+                            backgroundColor: 'rgba(231, 76, 60, 0.1)',
+                            tension: 0.4,
+                            borderWidth: 3
+                        }, {
+                            label: 'Saldo',
+                            data: sortedMonths.map(month => monthlyData[month].income - monthlyData[month].expenses),
+                            borderColor: '#f39c12',
+                            backgroundColor: 'rgba(243, 156, 18, 0.1)',
+                            tension: 0.4,
+                            borderWidth: 3
                         }]
                     },
                     options: {
